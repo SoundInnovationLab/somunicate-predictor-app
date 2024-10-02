@@ -1,0 +1,16 @@
+demographic_data: false
+dropout_prob: 0
+hidden_dims:
+- 64
+- 128
+- 128
+- 64
+input_dim: 45
+learning_rate: 0.0001
+loss_type: rmse
+lr_scheduler: true
+output_dim: 1
+predict_fam_lik: false
+target_name: being_ready
+use_batch_norm: false
+weight_decay: true
