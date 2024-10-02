@@ -15,14 +15,16 @@ if files:
 
     # somehow the load_waveforms function is not working with the list of UploadedFile objects
     for file in files:
-        st.audio(file, format="audio/wav")
         waveform, _ = librosa.load(file, sr=global_variables["sample_rate"])
-        # industry rating is part of the model input features
 
-        industry_input = st.radio(
-            "Select industry",
-            global_variables["industry_list"],
-        )
+        col1, col2 = st.columns(2)
+        col1.audio(file, format="audio/wav")
+        with col2:
+            industry_input = st.radio(
+                "Select industry",
+                global_variables["industry_list"],
+            )
+        # industry rating is part of the model input features
 
         input_features = get_model_input(waveform, industry_input, global_variables)
         st.write(input_features)
