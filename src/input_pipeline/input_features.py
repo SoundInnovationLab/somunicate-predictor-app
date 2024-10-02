@@ -3,6 +3,7 @@ import pandas as pd
 import librosa
 import joblib
 from sklearn.preprocessing import MinMaxScaler
+from mosqito.sq_metrics import loudness_zwtv
 
 
 def normalize_feature(
@@ -141,3 +142,159 @@ def get_model_input_timbre(waveform, global_variables) -> np.array:
     )
     timbre_topics = timbre_lda.transform(timbre_clusters.reshape(1, -1))[0]
     return timbre_topics
+
+
+def extract_chroma_features(waveform, sample_rate, frame_size, hop_size) -> np.array:
+    """
+    Wrapper for the librosa chroma_stft function.
+    """
+    return librosa.feature.chroma_stft(
+        y=waveform, sr=sample_rate, n_fft=frame_size, hop_length=hop_size
+    )
+
+
+def get_clean_chroma(chroma, waveform, hop_size) -> np.array:
+    """
+    1) mask where waveform < 40dB
+    2) smoothe chroma with median filter (3x3)
+    3) apply thresholding to remove noise (0.8)
+    """
+
+    non_zero_intervals = librosa.effects.split(y=waveform, top_db=40) // hop_size
+    mask = np.zeros(chroma.shape)
+    for interval in non_zero_intervals:
+        mask[:, interval[0] : interval[1]] = 1
+    non_zero_chroma = chroma * mask
+
+    median_chroma = np.apply_along_axis(
+        lambda x: np.convolve(x, np.ones(3) / 3, mode="same"),
+        axis=1,
+        arr=non_zero_chroma,
+    )
+
+    threshold_chroma = median_chroma.copy()
+    threshold_chroma[median_chroma < 0.8] = 0
+    return threshold_chroma
+
+
+def custom_chroma_argmax(x) -> np.array:
+    """
+    Works like np.argmax but returns -1 if
+    the array is all zeros in the frame
+    """
+    argmax = []
+    for idx in range(x.shape[1]):
+        x_slice = x[:, idx]
+        if not x_slice.any() == 0:
+            argmax.append(np.argmax(x_slice))
+        else:
+            argmax.append(-1)
+    return np.array(argmax)
+
+
+def get_relative_chroma(chroma: np.array) -> np.array:
+    """
+    1) determine dominant chroma
+    2) shift each chroma frame so that dominant chroma = 0
+    """
+    chroma_argmax = custom_chroma_argmax(chroma)
+    # only count frames where chroma is present (-1 means frame is too quiet)
+    dominant_chroma = np.argmax(np.bincount(chroma_argmax[chroma_argmax != -1]))
+    chroma_argmax[chroma_argmax != -1] = (
+        chroma_argmax[chroma_argmax != -1] - dominant_chroma
+    ) % 12
+    relative_chroma = np.array(chroma_argmax)
+    return relative_chroma
+
+
+def load_chroma_model():
+    """
+    Load the chroma feature models.
+    LDA for topics.
+    """
+    chroma_lda = joblib.load(
+        "data/models/input_feature_models/chroma_coherence_lda.pkl"
+    ).best_estimator_
+    return chroma_lda
+
+
+def get_chroma_count(relative_chroma) -> np.array:
+    """
+    Count the number of frames for each chroma value.
+    Used as the input for the chroma LDA model.
+    """
+    # 12 semitones + 1 for no chroma (-1)
+    chroma_count = np.zeros(13)
+    for val in relative_chroma:
+        idx = val + 1  # Shift values to align with index
+        chroma_count[idx] += 1
+
+    return chroma_count.astype(int)
+
+
+def get_model_input_chroma(waveform, global_variables) -> np.array:
+    """
+    Extract chroma features from an audio waveform and return
+    topic distribution for 12 chroma topics.
+    1) Extract chroma features
+    2) Clean chroma and shift so that dominant chroma = 0 (relative chroma)
+    3) Transform chroma count to chroma topics using LDA
+    """
+
+    chroma = extract_chroma_features(
+        waveform,
+        global_variables["sample_rate"],
+        global_variables["frame_size"],
+        global_variables["hop_size"],
+    )
+    # no normalization needed for chroma features (between 0 and 1 per default)
+    clean_chroma = get_clean_chroma(chroma, waveform, global_variables["hop_size"])
+    relative_chroma = get_relative_chroma(clean_chroma)
+
+    chroma_count = get_chroma_count(relative_chroma)
+    chroma_lda = load_chroma_model()
+    chroma_topics = chroma_lda.transform(chroma_count.reshape(1, -1))[0]
+    return chroma_topics
+
+
+def extract_loudness_feature(waveform, sample_rate):
+    """
+    Wrapper for the loudness_zwtv function from the mosqito library.
+    This is a subjective loudness measuer suitable for short
+    non-stationary signals.
+    """
+    loudness, _, _, _ = loudness_zwtv(waveform, sample_rate)
+    return loudness[::4]
+
+
+def load_loudnes_models():
+    """
+    Load the loudness feature models.
+    GMM for clusters and LDA for topics.
+    """
+    loudness_gmm = joblib.load(
+        "data/models/input_feature_models/loudness_gmm.pkl"
+    ).best_estimator_
+    loudness_lda = joblib.load(
+        "data/models/input_feature_models/loudness_log_likelihood_lda.pkl"
+    ).best_estimator_
+    return loudness_gmm, loudness_lda
+
+
+def get_model_input_loudness(waveform, global_variables) -> np.array:
+    """
+    Extract loudness features from an audio waveform and return
+    topic distribution for 8 loudness topics.
+    1) Extract Zwickel loudness features
+    2) Find loudness clusters using GMM -> get cluster count
+    3) Transform cluster count to loudness topics using LDA
+    """
+    loudness_gmm, loudness_lda = load_loudnes_models()
+    loudness = extract_loudness_feature(waveform, global_variables["sample_rate"])
+
+    normalized_loudness = normalize_feature(
+        loudness, global_variables["loudness_min"], global_variables["loudness_max"]
+    ).reshape(-1, 1)
+    cluster_count = get_cluster_count(normalized_loudness, loudness_gmm)
+    loudness_topics = loudness_lda.transform(cluster_count.reshape(1, -1))[0]
+    return loudness_topics
