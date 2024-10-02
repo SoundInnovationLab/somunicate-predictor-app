@@ -97,13 +97,13 @@ def load_timbre_models():
     Load the timbre feature models.
     PCA, Scaler and GMM for clusters and LDA for topics.
     """
-    timbre_pca = joblib.load("data/models/input_feature_models/timbre_pca.pkl")
-    timbre_scaler = joblib.load("data/models/input_feature_models/timbre_scaler.pkl")
+    timbre_pca = joblib.load("./data/models/input_feature_models/timbre_pca.pkl")
+    timbre_scaler = joblib.load("./data/models/input_feature_models/timbre_scaler.pkl")
     timbre_gmm = joblib.load(
-        "data/models/input_feature_models/timbre_gmm.pkl"
+        "./data/models/input_feature_models/timbre_gmm.pkl"
     ).best_estimator_
     timbre_lda = joblib.load(
-        "data/models/input_feature_models/timbre_coherence_lda.pkl"
+        "./data/models/input_feature_models/timbre_coherence_lda.pkl"
     ).best_estimator_
     return timbre_pca, timbre_scaler, timbre_gmm, timbre_lda
 
@@ -213,7 +213,7 @@ def load_chroma_model():
     LDA for topics.
     """
     chroma_lda = joblib.load(
-        "data/models/input_feature_models/chroma_coherence_lda.pkl"
+        "./data/models/input_feature_models/chroma_coherence_lda.pkl"
     ).best_estimator_
     return chroma_lda
 
@@ -273,10 +273,10 @@ def load_loudnes_models():
     GMM for clusters and LDA for topics.
     """
     loudness_gmm = joblib.load(
-        "data/models/input_feature_models/loudness_gmm.pkl"
+        "./data/models/input_feature_models/loudness_gmm.pkl"
     ).best_estimator_
     loudness_lda = joblib.load(
-        "data/models/input_feature_models/loudness_log_likelihood_lda.pkl"
+        "./data/models/input_feature_models/loudness_log_likelihood_lda.pkl"
     ).best_estimator_
     return loudness_gmm, loudness_lda
 
@@ -298,3 +298,29 @@ def get_model_input_loudness(waveform, global_variables) -> np.array:
     cluster_count = get_cluster_count(normalized_loudness, loudness_gmm)
     loudness_topics = loudness_lda.transform(cluster_count.reshape(1, -1))[0]
     return loudness_topics
+
+
+def oh_enc_industry(industry: str, industry_list: list) -> np.array:
+    """
+    One-Hot-Encode the industry feature
+    ["Apps", "Consumer", "Future", "Health", "Home", "Mobility", "Os"]
+    """
+    assert industry in industry_list, f"{industry} not in {industry_list}"
+    industry_idx = industry_list.index(industry)
+    industry_oh = np.zeros(len(industry_list))
+    industry_oh[industry_idx] = 1
+    return industry_oh
+
+
+def get_model_input(waveform: np.array, industry: str, global_variables) -> np.array:
+
+    assert (
+        industry in global_variables["industry_list"]
+    ), "Industry not in industry list"
+    # convert to input tensor
+    timbre_topics = get_model_input_timbre(waveform, global_variables)
+    chroma_topics = get_model_input_chroma(waveform, global_variables)
+    loudness_topics = get_model_input_loudness(waveform, global_variables)
+    industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
+
+    return np.concatenate((timbre_topics, chroma_topics, loudness_topics, industry_oh))

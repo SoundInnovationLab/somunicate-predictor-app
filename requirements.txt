@@ -1,0 +1,9 @@
+json
+librosa
+numpy
+pandas
+librosa
+joblib
+sklearn
+mosqito
+streamlit
