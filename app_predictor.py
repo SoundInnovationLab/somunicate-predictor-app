@@ -1,6 +1,6 @@
 import streamlit as st
 import librosa
-from src.utils.utils import load_global_variables
+from src.utils import load_global_variables, load_subset_model
 from src.input_pipeline.input_features import get_model_input
 
 global_variables = load_global_variables()
@@ -32,3 +32,8 @@ if files:
     # for waveform in waveforms:
     #     st.audio(waveform, format="audio/wav")
     #     st.write("Sound uploaded")
+
+model_all = load_subset_model(subset="all")
+model_status = load_subset_model(subset="status")
+model_appeal = load_subset_model(subset="appeal")
+model_brand = load_subset_model(subset="brand_identity")

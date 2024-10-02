@@ -6,6 +6,8 @@ import sys
 from sklearn.preprocessing import MinMaxScaler
 from mosqito.sq_metrics import loudness_zwtv
 
+sys.path.append("/Users/annikafrommholz/Documents/CODE/2404_somunicate")
+
 
 def normalize_feature(
     feature: np.array, min_value: float, max_value: float
