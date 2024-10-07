@@ -2,6 +2,7 @@ import json
 import librosa
 import numpy as np
 import os
+import torch
 from . import Models
 
 
@@ -62,3 +63,16 @@ def load_subset_model(subset: str = "all", target_list: list = None):
             )
             models[target] = model
         return models
+
+
+def predict(model, input_features):
+
+    assert model.hparams["input_dim"] == input_features.shape[0]
+    # convert waveform to input features
+    input_features = torch.tensor(input_features, dtype=torch.float32)
+    input_features = input_features.clone().detach().requires_grad_(True)
+    input_features = input_features.to(model.device)
+    model.eval()
+    prediction = model(input_features)
+
+    return prediction.detach().cpu().numpy()

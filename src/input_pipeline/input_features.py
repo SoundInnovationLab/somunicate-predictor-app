@@ -6,7 +6,12 @@ import sys
 from sklearn.preprocessing import MinMaxScaler
 from mosqito.sq_metrics import loudness_zwtv
 
-sys.path.append("/Users/annikafrommholz/Documents/CODE/2404_somunicate")
+# disable user warnings for sklearn
+import warnings
+
+warnings.filterwarnings("ignore")
+
+# sys.path.append("/Users/annikafrommholz/Documents/CODE/2404_somunicate")
 
 
 def normalize_feature(
@@ -103,11 +108,11 @@ def load_timbre_models():
     timbre_pca = joblib.load("./data/models/input_feature_models/timbre_pca.pkl")
     timbre_scaler = joblib.load("./data/models/input_feature_models/timbre_scaler.pkl")
     timbre_gmm = joblib.load(
-        "./data/models/input_feature_models/timbre_gmm.pkl"
-    ).best_estimator_
+        "./data/models/input_feature_models/timbre_gmm_best_est.pkl"
+    )
     timbre_lda = joblib.load(
-        "./data/models/input_feature_models/timbre_coherence_lda.pkl"
-    ).best_estimator_
+        "./data/models/input_feature_models/timbre_lda_best_est.pkl"
+    )
     return timbre_pca, timbre_scaler, timbre_gmm, timbre_lda
 
 
@@ -216,8 +221,8 @@ def load_chroma_model():
     LDA for topics.
     """
     chroma_lda = joblib.load(
-        "./data/models/input_feature_models/chroma_coherence_lda.pkl"
-    ).best_estimator_
+        "./data/models/input_feature_models/chroma_lda_best_est.pkl"
+    )
     return chroma_lda
 
 
@@ -276,11 +281,11 @@ def load_loudnes_models():
     GMM for clusters and LDA for topics.
     """
     loudness_gmm = joblib.load(
-        "./data/models/input_feature_models/loudness_gmm.pkl"
-    ).best_estimator_
+        "./data/models/input_feature_models/loudness_gmm_best_est.pkl"
+    )
     loudness_lda = joblib.load(
-        "./data/models/input_feature_models/loudness_log_likelihood_lda.pkl"
-    ).best_estimator_
+        "./data/models/input_feature_models/loudness_lda_best_est.pkl"
+    )
     return loudness_gmm, loudness_lda
 
 
