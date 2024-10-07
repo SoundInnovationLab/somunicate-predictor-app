@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import librosa
 import joblib
-import sys
 from sklearn.preprocessing import MinMaxScaler
 from mosqito.sq_metrics import loudness_zwtv
 
@@ -10,8 +9,6 @@ from mosqito.sq_metrics import loudness_zwtv
 import warnings
 
 warnings.filterwarnings("ignore")
-
-# sys.path.append("/Users/annikafrommholz/Documents/CODE/2404_somunicate")
 
 
 def normalize_feature(
