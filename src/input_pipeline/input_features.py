@@ -102,14 +102,10 @@ def load_timbre_models():
     Load the timbre feature models.
     PCA, Scaler and GMM for clusters and LDA for topics.
     """
-    timbre_pca = joblib.load("./data/models/input_feature_models/timbre_pca.pkl")
-    timbre_scaler = joblib.load("./data/models/input_feature_models/timbre_scaler.pkl")
-    timbre_gmm = joblib.load(
-        "./data/models/input_feature_models/timbre_gmm_best_est.pkl"
-    )
-    timbre_lda = joblib.load(
-        "./data/models/input_feature_models/timbre_lda_best_est.pkl"
-    )
+    timbre_pca = joblib.load("./models/input_feature_models/timbre_pca.pkl")
+    timbre_scaler = joblib.load("./models/input_feature_models/timbre_scaler.pkl")
+    timbre_gmm = joblib.load("./models/input_feature_models/timbre_gmm_best_est.pkl")
+    timbre_lda = joblib.load("./models/input_feature_models/timbre_lda_best_est.pkl")
     return timbre_pca, timbre_scaler, timbre_gmm, timbre_lda
 
 
@@ -217,9 +213,7 @@ def load_chroma_model():
     Load the chroma feature models.
     LDA for topics.
     """
-    chroma_lda = joblib.load(
-        "./data/models/input_feature_models/chroma_lda_best_est.pkl"
-    )
+    chroma_lda = joblib.load("./models/input_feature_models/chroma_lda_best_est.pkl")
     return chroma_lda
 
 
@@ -278,10 +272,10 @@ def load_loudnes_models():
     GMM for clusters and LDA for topics.
     """
     loudness_gmm = joblib.load(
-        "./data/models/input_feature_models/loudness_gmm_best_est.pkl"
+        "./models/input_feature_models/loudness_gmm_best_est.pkl"
     )
     loudness_lda = joblib.load(
-        "./data/models/input_feature_models/loudness_lda_best_est.pkl"
+        "./models/input_feature_models/loudness_lda_best_est.pkl"
     )
     return loudness_gmm, loudness_lda
 
@@ -318,6 +312,10 @@ def oh_enc_industry(industry: str, industry_list: list) -> np.array:
 
 
 def get_model_input(waveform: np.array, global_variables) -> np.array:
+    """
+    Extract all input features for the models.
+    16 timbre topics, 12 chroma topics, 8 loudness topics
+    """
 
     # all models use musical features as input
     timbre_topics = get_model_input_timbre(waveform, global_variables)
@@ -336,6 +334,6 @@ def append_industry_to_model_input(
     """
     assert (
         industry in global_variables["industry_list"]
-    ), f"{industry} not in {global_variables['industry_list']}"
+    ), f"Industry '{industry}' not in {global_variables['industry_list']}"
     industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
     return np.concatenate((model_input, industry_oh))
