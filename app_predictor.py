@@ -20,6 +20,7 @@ model_with_industry = load_rf_model()
 model_no_industry = load_rf_model(include_industry=False)
 model_type = "Multi-Output Model (overall)"
 
+# option for selecting the type of model will be included soon
 # model_type = st.radio(
 #     "Select the type of model",
 #     [
@@ -67,71 +68,72 @@ if files:
                         "Select industry",
                         global_variables["industry_list"],
                         horizontal=True,
+                        key=f"industry_{f_idx}",
                     )
                     # get input feature array with industry (one-hot encoeded)
                     input_features = append_industry_to_model_input(
                         input_features, industry_input, global_variables
                     )
 
-        if model_type == "Multi-Output Model (overall)":
-            if include_industry:
-                prediction = predict(model_with_industry, input_features)
-            else:
-                prediction = predict(model_no_industry, input_features)
-            pred_df = pd.DataFrame(
-                {
-                    "Dimension": global_variables["target_list"],
-                    "Prediction": prediction,
-                }
-            )
-
-            # elif model_type == "Multi-Output Model (level-wise)":
-            #     status = predict(model_status, input_features)
-            #     appeal = predict(model_appeal, input_features)
-            #     brand_identity = predict(model_brand, input_features)
-            #     pred_df = pd.DataFrame(
-            #         {
-            #             "Dimension": global_variables["status_list"]
-            #             + global_variables["appeal_list"]
-            #             + global_variables["brand_identity_list"],
-            #             "Prediction": np.concatenate([status, appeal, brand_identity]),
-            #         }
-            #     )
-
-            # elif model_type == "Single-Output Model":
-            #     # make single predictions and save to array
-            #     predictions = np.zeros(len(global_variables["target_list"]))
-            #     for t_idx, target in enumerate(global_variables["target_list"]):
-            #         model = models_1dim[target]
-            #         predictions[t_idx] = predict(model, input_features)
-            #     pred_df = pd.DataFrame(
-            #         {
-            #             "Dimension": global_variables["target_list"],
-            #             "Prediction": predictions,
-            #         }
-            #     )
-
-            col_status, col_appeal, col_brand = st.columns(3)
-            with col_status:
-                st.header("Status Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(global_variables["status_list"])
-                    ].sort_values(by="Prediction", ascending=False)
+            if model_type == "Multi-Output Model (overall)":
+                if include_industry:
+                    prediction = predict(model_with_industry, input_features)
+                else:
+                    prediction = predict(model_no_industry, input_features)
+                pred_df = pd.DataFrame(
+                    {
+                        "Dimension": global_variables["target_list"],
+                        "Prediction": prediction,
+                    }
                 )
-            with col_appeal:
-                st.header("Appeal Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(global_variables["appeal_list"])
-                    ].sort_values(by="Prediction", ascending=False)
-                )
-            with col_brand:
-                st.header("Brand Identity Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(
-                            global_variables["brand_identity_list"]
-                        )
-                    ].sort_values(by="Prediction", ascending=False)
-                )
+
+                # elif model_type == "Multi-Output Model (level-wise)":
+                #     status = predict(model_status, input_features)
+                #     appeal = predict(model_appeal, input_features)
+                #     brand_identity = predict(model_brand, input_features)
+                #     pred_df = pd.DataFrame(
+                #         {
+                #             "Dimension": global_variables["status_list"]
+                #             + global_variables["appeal_list"]
+                #             + global_variables["brand_identity_list"],
+                #             "Prediction": np.concatenate([status, appeal, brand_identity]),
+                #         }
+                #     )
+
+                # elif model_type == "Single-Output Model":
+                #     # make single predictions and save to array
+                #     predictions = np.zeros(len(global_variables["target_list"]))
+                #     for t_idx, target in enumerate(global_variables["target_list"]):
+                #         model = models_1dim[target]
+                #         predictions[t_idx] = predict(model, input_features)
+                #     pred_df = pd.DataFrame(
+                #         {
+                #             "Dimension": global_variables["target_list"],
+                #             "Prediction": predictions,
+                #         }
+                #     )
+
+                col_status, col_appeal, col_brand = st.columns(3)
+                with col_status:
+                    st.header("Status Dimension")
+                    st.dataframe(
+                        pred_df[
+                            pred_df["Dimension"].isin(global_variables["status_list"])
+                        ].sort_values(by="Prediction", ascending=False)
+                    )
+                with col_appeal:
+                    st.header("Appeal Dimension")
+                    st.dataframe(
+                        pred_df[
+                            pred_df["Dimension"].isin(global_variables["appeal_list"])
+                        ].sort_values(by="Prediction", ascending=False)
+                    )
+                with col_brand:
+                    st.header("Brand Identity Dimension")
+                    st.dataframe(
+                        pred_df[
+                            pred_df["Dimension"].isin(
+                                global_variables["brand_identity_list"]
+                            )
+                        ].sort_values(by="Prediction", ascending=False)
+                    )
