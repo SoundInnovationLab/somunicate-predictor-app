@@ -4,7 +4,10 @@ import pandas as pd
 import librosa
 
 from src.utils import load_global_variables, load_rf_model, predict
-from src.input_pipeline.input_features import get_model_input
+from src.input_pipeline.input_features import (
+    get_model_input,
+    append_industry_to_model_input,
+)
 
 st.set_page_config(layout="wide")
 
@@ -55,6 +58,9 @@ if files:
 
             col1, col2 = st.columns(2)
             col1.audio(file, format="audio/wav")
+            # calculate input features here so they don't get
+            # recalculated when changing to industry model or changing the industry
+            input_features = get_model_input(waveform, global_variables)
             with col2:
                 if include_industry:
                     industry_input = st.radio(
@@ -63,14 +69,10 @@ if files:
                         horizontal=True,
                     )
                     # get input feature array with industry (one-hot encoeded)
-                    input_features = get_model_input(
-                        waveform, global_variables, industry_input
+                    input_features = append_industry_to_model_input(
+                        input_features, industry_input, global_variables
                     )
-                else:
-                    # get input feature array without industry (another model is used)
-                    input_features = get_model_input(waveform, global_variables)
 
-        # this
         if model_type == "Multi-Output Model (overall)":
             if include_industry:
                 prediction = predict(model_with_industry, input_features)
@@ -83,51 +85,53 @@ if files:
                 }
             )
 
-        # elif model_type == "Multi-Output Model (level-wise)":
-        #     status = predict(model_status, input_features)
-        #     appeal = predict(model_appeal, input_features)
-        #     brand_identity = predict(model_brand, input_features)
-        #     pred_df = pd.DataFrame(
-        #         {
-        #             "Dimension": global_variables["status_list"]
-        #             + global_variables["appeal_list"]
-        #             + global_variables["brand_identity_list"],
-        #             "Prediction": np.concatenate([status, appeal, brand_identity]),
-        #         }
-        #     )
+            # elif model_type == "Multi-Output Model (level-wise)":
+            #     status = predict(model_status, input_features)
+            #     appeal = predict(model_appeal, input_features)
+            #     brand_identity = predict(model_brand, input_features)
+            #     pred_df = pd.DataFrame(
+            #         {
+            #             "Dimension": global_variables["status_list"]
+            #             + global_variables["appeal_list"]
+            #             + global_variables["brand_identity_list"],
+            #             "Prediction": np.concatenate([status, appeal, brand_identity]),
+            #         }
+            #     )
 
-        # elif model_type == "Single-Output Model":
-        #     # make single predictions and save to array
-        #     predictions = np.zeros(len(global_variables["target_list"]))
-        #     for t_idx, target in enumerate(global_variables["target_list"]):
-        #         model = models_1dim[target]
-        #         predictions[t_idx] = predict(model, input_features)
-        #     pred_df = pd.DataFrame(
-        #         {
-        #             "Dimension": global_variables["target_list"],
-        #             "Prediction": predictions,
-        #         }
-        #     )
+            # elif model_type == "Single-Output Model":
+            #     # make single predictions and save to array
+            #     predictions = np.zeros(len(global_variables["target_list"]))
+            #     for t_idx, target in enumerate(global_variables["target_list"]):
+            #         model = models_1dim[target]
+            #         predictions[t_idx] = predict(model, input_features)
+            #     pred_df = pd.DataFrame(
+            #         {
+            #             "Dimension": global_variables["target_list"],
+            #             "Prediction": predictions,
+            #         }
+            #     )
 
-        col_status, col_appeal, col_brand = st.columns(3)
-        with col_status:
-            st.header("Status Dimension")
-            st.dataframe(
-                pred_df[
-                    pred_df["Dimension"].isin(global_variables["status_list"])
-                ].sort_values(by="Prediction", ascending=False)
-            )
-        with col_appeal:
-            st.header("Appeal Dimension")
-            st.dataframe(
-                pred_df[
-                    pred_df["Dimension"].isin(global_variables["appeal_list"])
-                ].sort_values(by="Prediction", ascending=False)
-            )
-        with col_brand:
-            st.header("Brand Identity Dimension")
-            st.dataframe(
-                pred_df[
-                    pred_df["Dimension"].isin(global_variables["brand_identity_list"])
-                ].sort_values(by="Prediction", ascending=False)
-            )
+            col_status, col_appeal, col_brand = st.columns(3)
+            with col_status:
+                st.header("Status Dimension")
+                st.dataframe(
+                    pred_df[
+                        pred_df["Dimension"].isin(global_variables["status_list"])
+                    ].sort_values(by="Prediction", ascending=False)
+                )
+            with col_appeal:
+                st.header("Appeal Dimension")
+                st.dataframe(
+                    pred_df[
+                        pred_df["Dimension"].isin(global_variables["appeal_list"])
+                    ].sort_values(by="Prediction", ascending=False)
+                )
+            with col_brand:
+                st.header("Brand Identity Dimension")
+                st.dataframe(
+                    pred_df[
+                        pred_df["Dimension"].isin(
+                            global_variables["brand_identity_list"]
+                        )
+                    ].sort_values(by="Prediction", ascending=False)
+                )

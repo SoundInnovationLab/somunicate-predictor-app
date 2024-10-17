@@ -317,24 +317,25 @@ def oh_enc_industry(industry: str, industry_list: list) -> np.array:
     return industry_oh
 
 
-def get_model_input(
-    waveform: np.array, global_variables, industry: str = None
-) -> np.array:
+def get_model_input(waveform: np.array, global_variables) -> np.array:
 
     # all models use musical features as input
     timbre_topics = get_model_input_timbre(waveform, global_variables)
     chroma_topics = get_model_input_chroma(waveform, global_variables)
     loudness_topics = get_model_input_loudness(waveform, global_variables)
+    return np.concatenate((timbre_topics, chroma_topics, loudness_topics))
 
-    # there is the option to not provide the industry feature
-    # another model trained without the industry feature is used then
-    if industry is not None:
-        assert (
-            industry in global_variables["industry_list"]
-        ), "Industry not in industry list"
-        industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
-        return np.concatenate(
-            (timbre_topics, chroma_topics, loudness_topics, industry_oh)
-        )
-    else:
-        return np.concatenate((timbre_topics, chroma_topics, loudness_topics))
+
+def append_industry_to_model_input(
+    model_input: np.array, industry: str, global_variables: dict
+) -> np.array:
+    """
+    Append the industry feature to the model input. If users decide to include
+    the industry feature this is done after calculating the input features.
+    Otherwise feature extraction had to be redone and this takes time.
+    """
+    assert (
+        industry in global_variables["industry_list"]
+    ), f"{industry} not in {global_variables['industry_list']}"
+    industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
+    return np.concatenate((model_input, industry_oh))

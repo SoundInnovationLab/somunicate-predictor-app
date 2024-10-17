@@ -35,7 +35,7 @@ def load_subset_model(subset: str = "all", target_list: list = None):
     if subset != "dimensions":
 
         best_model_folder = (
-            "data/models/regression_models/ML_including_industry_feature/multi_dimension_"
+            "./data/models/regression_models/ML_including_industry_feature/multi_dimension_"
             + subset
             + "/version_best/checkpoints"
         )
@@ -52,7 +52,7 @@ def load_subset_model(subset: str = "all", target_list: list = None):
         models = {}
         for target in target_list:
             best_model_folder = (
-                "data/models/regression_models/ML_including_industry_feature/single_dimension/"
+                "./data/models/regression_models/ML_including_industry_feature/single_dimension/"
                 + target
                 + "/version_best/checkpoints"
             )
@@ -92,9 +92,9 @@ def predict(model, input_features):
 
 def load_rf_model(subset: str = "all", include_industry: bool = True):
     if include_industry:
-        best_model_file = "data/models/regression_models/RF/multi_dimension_all/241016_model_with_insdustry.pkl"
+        best_model_file = "./data/models/regression_models/RF/multi_dimension_all/241016_model_with_insdustry.pkl"
     else:
-        best_model_file = "data/models/regression_models/RF/multi_dimension_all/241016_model_no_industry.pkl"
+        best_model_file = "./data/models/regression_models/RF/multi_dimension_all/241016_model_no_industry.pkl"
 
     model = joblib.load(best_model_file)
     return model
