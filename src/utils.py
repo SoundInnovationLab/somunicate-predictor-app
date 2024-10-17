@@ -1,8 +1,10 @@
 import json
 import librosa
-import numpy as np
 import os
+import joblib
 import torch
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
 from . import Models
 
 
@@ -67,12 +69,32 @@ def load_subset_model(subset: str = "all", target_list: list = None):
 
 def predict(model, input_features):
 
-    assert model.hparams["input_dim"] == input_features.shape[0]
-    # convert waveform to input features
-    input_features = torch.tensor(input_features, dtype=torch.float32)
-    input_features = input_features.clone().detach().requires_grad_(True)
-    input_features = input_features.to(model.device)
-    model.eval()
-    prediction = model(input_features)
+    # check if model is of type DNNRegressor
+    if isinstance(model, Models.DNNRegressor):
+        print("DNNRegressor model")
+        assert model.hparams["input_dim"] == input_features.shape[0]
+        # convert waveform to input features
+        input_features = torch.tensor(input_features, dtype=torch.float32)
+        input_features = input_features.clone().detach().requires_grad_(True)
+        input_features = input_features.to(model.device)
+        model.eval()
+        prediction = model(input_features)
 
-    return prediction.detach().cpu().numpy()
+        return prediction.detach().cpu().numpy()
+
+    # check if model is of type RandomForestRegressor
+    elif isinstance(model, RandomForestRegressor):
+        print("RandomForestRegressor model")
+        prediction = model.predict(input_features.reshape(1, -1))
+        # return prediction as 1D array
+        return prediction.reshape(-1)
+
+
+def load_rf_model(subset: str = "all", include_industry: bool = True):
+    if include_industry:
+        best_model_file = "data/models/regression_models/RF/multi_dimension_all/241016_model_with_insdustry.pkl"
+    else:
+        best_model_file = "data/models/regression_models/RF/multi_dimension_all/241016_model_no_industry.pkl"
+
+    model = joblib.load(best_model_file)
+    return model

@@ -317,15 +317,24 @@ def oh_enc_industry(industry: str, industry_list: list) -> np.array:
     return industry_oh
 
 
-def get_model_input(waveform: np.array, industry: str, global_variables) -> np.array:
+def get_model_input(
+    waveform: np.array, global_variables, industry: str = None
+) -> np.array:
 
-    assert (
-        industry in global_variables["industry_list"]
-    ), "Industry not in industry list"
-    # convert to input tensor
+    # all models use musical features as input
     timbre_topics = get_model_input_timbre(waveform, global_variables)
     chroma_topics = get_model_input_chroma(waveform, global_variables)
     loudness_topics = get_model_input_loudness(waveform, global_variables)
-    industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
 
-    return np.concatenate((timbre_topics, chroma_topics, loudness_topics, industry_oh))
+    # there is the option to not provide the industry feature
+    # another model trained without the industry feature is used then
+    if industry is not None:
+        assert (
+            industry in global_variables["industry_list"]
+        ), "Industry not in industry list"
+        industry_oh = oh_enc_industry(industry, global_variables["industry_list"])
+        return np.concatenate(
+            (timbre_topics, chroma_topics, loudness_topics, industry_oh)
+        )
+    else:
+        return np.concatenate((timbre_topics, chroma_topics, loudness_topics))
