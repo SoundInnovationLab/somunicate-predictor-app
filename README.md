@@ -18,6 +18,12 @@ The functionality of the prediction model can also be used seperately with the `
 - `--sound_file` argument specifies the path to the `.wav` or `.mp3` to be predicted.
 - `--industry` is set to `None` by default. The options are `["Apps", "Consumer", "Future", "Health", "Home", "Mobility", "Os"]`. If the argument is specified the model which uses industry as an input feature is used automatically.
 - `--output_folder` is where the resulting prediction dictionary is saved (`.json` file). The model that was used is also saved in the JSON file. It is set to `data/predictions/` per default. 
+- `--subset`argument specifies which multioutput model is used. Per default all dimensions are predicted using the `all` multioutput model. The other options are `funcitonal` (appeal and status combined) and `brand_identity`.
+
+![dimensions predicted in predict.py script using different subsets](./misc/image.png)
+
+There are two underlying ideas: 1) A model that predicts all 19 dimensions simultaneously 2) separating the functional communication level and the aesthetic (brand identity) level. During the model selection the results revealed that those two levels utilize completely different learning paradigms (deep learning versus random forest) and thus could be used separately. 
+
 
 The script works on it's own and predicts the dimension ratings for an example sound (`data/audios/AMG_Mobility-003.mp3`) usind no industry and saves the prediction (`data/predictions`)
 ```

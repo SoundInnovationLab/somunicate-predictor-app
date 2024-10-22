@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 import librosa
 
-from src.utils import load_global_variables, load_rf_model, load_waveforms, predict
+from src.utils import (
+    load_global_variables,
+    load_multioutput_model,
+    load_waveforms,
+    predict,
+)
 from src.input_pipeline.input_features import (
     get_model_input,
     append_industry_to_model_input,
@@ -13,19 +18,29 @@ from src.input_pipeline.input_features import (
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--industry", type=str, default=None)
 parser.add_argument(
     "--sound_file", type=str, default="data/audios/AMG_Mobility-003.mp3"
 )
+parser.add_argument("--industry", type=str, default=None)
 parser.add_argument("--output_folder", type=str, default="data/predictions")
+parser.add_argument(
+    "--subset",
+    type=str,
+    default="all",
+    help="Subset of the model to use. Options: all, functional, brand_identity",
+)
 args = parser.parse_args()
 
 # load resources and models
 global_variables = load_global_variables()
 if args.industry is None:
-    model, model_path = load_rf_model(include_industry=False, return_model_path=True)
+    model, model_path = load_multioutput_model(
+        subset=args.subset, include_industry=False, return_model_path=True
+    )
 else:
-    model, model_path = load_rf_model(return_model_path=True)
+    model, model_path = load_multioutput_model(
+        subset=args.subset, return_model_path=True
+    )
 print(f"Predicting with model: {model_path}")
 
 
