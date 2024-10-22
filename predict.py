@@ -31,6 +31,12 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+assert args.subset in [
+    "all",
+    "functional",
+    "brand_identity",
+], "Invalid subset argument. The options are: all, functional, brand_identity"
+
 # load resources and models
 global_variables = load_global_variables()
 if args.industry is None:
@@ -42,6 +48,14 @@ else:
         subset=args.subset, return_model_path=True
     )
 print(f"Predicting with model: {model_path}")
+
+# define target list depending on subset
+if args.subset == "all":
+    target_list = global_variables["target_list"]
+elif args.subset == "functional":
+    target_list = global_variables["status_list"] + global_variables["appeal_list"]
+elif args.subset == "brand_identity":
+    target_list = global_variables["brand_identity_list"]
 
 
 # load waveform and create input features
@@ -63,7 +77,7 @@ model_prediction_dict = {}
 # to track which model type and version was used
 model_prediction_dict["model"] = model_path
 prediction_dict = {}
-for i, target in enumerate(global_variables["target_list"]):
+for i, target in enumerate(target_list):
     prediction_dict[target] = prediction[i]
 model_prediction_dict["predictions"] = prediction_dict
 
