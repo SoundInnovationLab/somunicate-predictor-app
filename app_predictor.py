@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import librosa
 
-from src.utils import load_global_variables, load_rf_model, predict
+from src.utils import load_global_variables, load_multioutput_model, predict
 from src.input_pipeline.input_features import (
     get_model_input,
     append_industry_to_model_input,
@@ -15,29 +15,16 @@ global_variables = load_global_variables()
 
 st.title("Predict the Status, Appeal and Brand Identity of UX sounds")
 
-# current version only has best models for multi-dimensional (all)
-model_with_industry = load_rf_model()
-model_no_industry = load_rf_model(include_industry=False)
-model_type = "Multi-Output Model (overall)"
 
 # option for selecting the type of model will be included soon
-# model_type = st.radio(
-#     "Select the type of model",
-#     [
-#         "Single-Output Model",
-#         "Multi-Output Model (level-wise)",
-#         "Multi-Output Model (overall)",
-#     ],
-#     horizontal=True,
-# )
-
-# laod all models
-# model_status = load_subset_model(subset="status")
-# model_appeal = load_subset_model(subset="appeal")
-# model_brand = load_subset_model(subset="brand_identity")
-# models_1dim = load_subset_model(
-#     subset="dimensions", target_list=global_variables["target_list"]
-# )
+model_type = st.radio(
+    "Select the type of model",
+    [
+        "Multi-Output Model (overall)",
+        "Multi-Output Model (Functional & Brand Identity separately)",
+    ],
+    horizontal=True,
+)
 
 files = st.file_uploader(
     "Upload your functional sound(s)", type=["mp3", "wav"], accept_multiple_files=True
@@ -48,6 +35,19 @@ include_industry = st.toggle(
     help="The model can predict the percieved expression of the UX sound better, if information on the industry is provided. If it is not provided, the prediction still works.",
 )
 
+if include_industry:
+    model_all = load_multioutput_model()
+    model_functional = load_multioutput_model(subset="functional")
+    model_brand_identity = load_multioutput_model(subset="brand_identity")
+else:
+    model_all = load_multioutput_model(include_industry=False)
+    model_functional = load_multioutput_model(
+        subset="functional", include_industry=False
+    )
+    model_brand_identity = load_multioutput_model(
+        subset="brand_identity", include_industry=False
+    )
+print("models loaded")
 
 if files:
     # somehow the load_waveforms function is not working with the list of UploadedFile objects
@@ -76,10 +76,7 @@ if files:
                     )
 
             if model_type == "Multi-Output Model (overall)":
-                if include_industry:
-                    prediction = predict(model_with_industry, input_features)
-                else:
-                    prediction = predict(model_no_industry, input_features)
+                prediction = predict(model_all, input_features)
                 pred_df = pd.DataFrame(
                     {
                         "Dimension": global_variables["target_list"],

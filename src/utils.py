@@ -88,15 +88,31 @@ def predict(model, input_features):
         return prediction.reshape(-1)
 
 
-def load_rf_model(
+def load_multioutput_model(
     subset: str = "all", include_industry: bool = True, return_model_path: bool = False
 ):
-    if include_industry:
-        best_model_file = "./models/regression_models/RF/multi_dimension_all/241016_model_with_insdustry.pkl"
-    else:
-        best_model_file = "./models/regression_models/RF/multi_dimension_all/241016_model_no_industry.pkl"
+    if subset == "all":
+        if include_industry:
+            best_model_file = "./models/regression_models/multi_dimension_all/industry/241016_model_with_insdustry.pkl"
+        else:
+            best_model_file = "./models/regression_models/multi_dimension_all/no_industry/241016_model_no_insdustry.pkl"
+        model = joblib.load(best_model_file)
 
-    model = joblib.load(best_model_file)
+    if subset == "functional":
+        if include_industry:
+            best_model_file = "./models/regression_models/multidimension_f_bi_level/industry/functional/241022_model.pkl"
+        else:
+            best_model_file = "./models/regression_models/multidimension_f_bi_level/no_industry/functional/241022_model.pkl"
+
+        model = joblib.load(best_model_file)
+
+    if subset == "brand_identity":
+        if include_industry:
+            best_model_file = "./models/regression_models/multidimension_f_bi_level/industry/brand_identity/lightning_logs/241022_version_best/checkpoints/epoch=59-step=1500.ckpt"
+        else:
+            best_model_file = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/checkpoints/epoch=59-step=2040.ckpt"
+
+        model = Models.DNNRegressor.load_from_checkpoint
 
     # when saving the prediction in a dictionary the model path is stored
     if return_model_path:
