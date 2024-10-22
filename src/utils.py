@@ -95,7 +95,7 @@ def load_multioutput_model(
         if include_industry:
             best_model_file = "./models/regression_models/multi_dimension_all/industry/241016_model_with_insdustry.pkl"
         else:
-            best_model_file = "./models/regression_models/multi_dimension_all/no_industry/241016_model_no_insdustry.pkl"
+            best_model_file = "./models/regression_models/multi_dimension_all/no_industry/241016_model_no_industry.pkl"
         model = joblib.load(best_model_file)
 
     if subset == "functional":
@@ -112,7 +112,7 @@ def load_multioutput_model(
         else:
             best_model_file = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/checkpoints/epoch=59-step=2040.ckpt"
 
-        model = Models.DNNRegressor.load_from_checkpoint
+        model = Models.DNNRegressor.load_from_checkpoint(best_model_file)
 
     # when saving the prediction in a dictionary the model path is stored
     if return_model_path:
