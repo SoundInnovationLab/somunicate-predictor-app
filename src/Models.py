@@ -3,10 +3,22 @@ import torch.nn as nn
 
 
 class InferenceDNNRegressor(pl.LightningModule):
-    def __init__(
-        self, input_dim, output_dim, hidden_dims, use_batch_norm=False, dropout_prob=0.0
-    ):
+    def __init__(self, industry: bool):
         super(InferenceDNNRegressor, self).__init__()
+        self.indutry = industry
+
+        output_dim = 7
+
+        if industry:
+            input_dim = 45
+            hidden_dims = [256, 128]
+            use_batch_norm = False
+            dropout_prob = 0.3
+        else:
+            input_dim = 38
+            hidden_dims = [128, 64, 32]
+            use_batch_norm = False
+            dropout_prob = 0.0
 
         layers = []
         current_dim = input_dim

@@ -77,21 +77,14 @@ def load_multioutput_model(
             best_model_checkpoint = (
                 best_model_folder + "checkpoints/epoch=59-step=1500.ckpt"
             )
+            model = InferenceDNNRegressor(industry=True)
         else:
             best_model_folder = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/"
             best_model_checkpoint = (
                 best_model_folder + "checkpoints/epoch=59-step=2040.ckpt"
             )
+            model = InferenceDNNRegressor(industry=False)
 
-        with open(best_model_folder + "hparams.yaml", "r") as file:
-            hparams = yaml.safe_load(file)
-        model = InferenceDNNRegressor(
-            input_dim=hparams["input_dim"],
-            output_dim=hparams["output_dim"],
-            hidden_dims=hparams["hidden_dims"],
-            use_batch_norm=hparams["use_batch_norm"],
-            dropout_prob=hparams["dropout_prob"],
-        )
         model.load_state_dict(torch.load(best_model_checkpoint)["state_dict"])
 
     # when saving the prediction in a dictionary the model path is stored

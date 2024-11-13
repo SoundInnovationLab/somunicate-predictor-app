@@ -1,20 +1,20 @@
 # imports
-import os
 import argparse
+import os
+
+import librosa
 import numpy as np
 import pandas as pd
-import librosa
 
+from src.input_pipeline.input_features import (
+    append_industry_to_model_input,
+    get_model_input,
+)
 from src.utils import (
     load_global_variables,
     load_multioutput_model,
     predict,
 )
-from src.input_pipeline.input_features import (
-    get_model_input,
-    append_industry_to_model_input,
-)
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
