@@ -1,11 +1,14 @@
 import json
-import librosa
 import os
+
 import joblib
-import torch
+import librosa
 import numpy as np
+import torch
+import yaml
 from sklearn.ensemble import RandomForestRegressor
-from . import Models
+
+from .Models import InferenceDNNRegressor
 
 
 def load_global_variables() -> dict:
@@ -31,47 +34,9 @@ def load_waveforms(file_names: list, sample_rate: int = 22050) -> list:
     return waveforms
 
 
-def load_subset_model(subset: str = "all", target_list: list = None):
-    if subset != "dimensions":
-
-        best_model_folder = (
-            "./models/regression_models/ML_including_industry_feature/multi_dimension_"
-            + subset
-            + "/version_best/checkpoints"
-        )
-        model_files = [
-            file for file in os.listdir(best_model_folder) if file.endswith(".ckpt")
-        ]
-        # load model
-        model = Models.DNNRegressor.load_from_checkpoint(
-            best_model_folder + "/" + model_files[0]
-        )
-        return model
-    else:
-        # load all models for all dimensions
-        models = {}
-        for target in target_list:
-            best_model_folder = (
-                "./models/regression_models/ML_including_industry_feature/single_dimension/"
-                + target
-                + "/version_best/checkpoints"
-            )
-            model_files = [
-                file for file in os.listdir(best_model_folder) if file.endswith(".ckpt")
-            ]
-            # load model
-            model = Models.DNNRegressor.load_from_checkpoint(
-                best_model_folder + "/" + model_files[0]
-            )
-            models[target] = model
-        return models
-
-
 def predict(model, input_features):
-
     # check if model is of type DNNRegressor
-    if isinstance(model, Models.DNNRegressor):
-        assert model.hparams["input_dim"] == input_features.shape[0]
+    if isinstance(model, InferenceDNNRegressor):
         # convert waveform to input features
         input_features = torch.tensor(input_features, dtype=torch.float32)
         input_features = input_features.clone().detach().requires_grad_(True)
@@ -108,11 +73,26 @@ def load_multioutput_model(
 
     if subset == "brand_identity":
         if include_industry:
-            best_model_file = "./models/regression_models/multidimension_f_bi_level/industry/brand_identity/lightning_logs/241022_version_best/checkpoints/epoch=59-step=1500.ckpt"
+            best_model_folder = "./models/regression_models/multidimension_f_bi_level/industry/brand_identity/lightning_logs/241022_version_best/"
+            best_model_checkpoint = (
+                best_model_folder + "checkpoints/epoch=59-step=1500.ckpt"
+            )
         else:
-            best_model_file = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/checkpoints/epoch=59-step=2040.ckpt"
+            best_model_folder = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/"
+            best_model_checkpoint = (
+                best_model_folder + "checkpoints/epoch=59-step=2040.ckpt"
+            )
 
-        model = Models.DNNRegressor.load_from_checkpoint(best_model_file)
+        with open(best_model_folder + "hparams.yaml", "r") as file:
+            hparams = yaml.safe_load(file)
+        model = InferenceDNNRegressor(
+            input_dim=hparams["input_dim"],
+            output_dim=hparams["output_dim"],
+            hidden_dims=hparams["hidden_dims"],
+            use_batch_norm=hparams["use_batch_norm"],
+            dropout_prob=hparams["dropout_prob"],
+        )
+        model.load_state_dict(torch.load(best_model_checkpoint)["state_dict"])
 
     # when saving the prediction in a dictionary the model path is stored
     if return_model_path:
