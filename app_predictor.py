@@ -9,7 +9,7 @@ from src.input_pipeline.input_features import (
     append_industry_to_model_input,
 )
 
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 global_variables = load_global_variables()
 
@@ -17,23 +17,26 @@ st.title("Predict the Status, Appeal and Brand Identity of UX sounds")
 
 
 # option for selecting the type of model will be included soon
-model_type = st.radio(
-    "Select the type of model",
-    [
-        "Multi-Output Model (overall)",
-        "Multi-Output Model (Functional & Brand Identity separately)",
-    ],
-    horizontal=True,
-)
+# model_type = st.radio(
+#     "Select the type of model",
+#     [
+#         "Multi-Output Model (overall)",
+#         "Multi-Output Model (Functional & Brand Identity separately)",
+#     ],
+#     horizontal=True,
+# )
+model_type = "Multi-Output Model (overall)"
 
 files = st.file_uploader(
     "Upload your functional sound(s)", type=["mp3", "wav"], accept_multiple_files=True
 )
-include_industry = st.toggle(
-    "Use industry as input",
-    value=True,
-    help="The model can predict the percieved expression of the UX sound better, if information on the industry is provided. If it is not provided, the prediction still works.",
-)
+# include_industry = st.toggle(
+#     "Use industry as input",
+#     value=True,
+#     help="The model can predict the percieved expression of the UX sound better, if information on the industry is provided. If it is not provided, the prediction still works.",
+# )
+include_industry = True
+show_2nd_pred = False
 
 if include_industry:
     model_all = load_multioutput_model()
@@ -48,13 +51,34 @@ else:
         subset="brand_identity", include_industry=False
     )
 
+with st.expander("Possible Dimensions"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.header("Status")
+        for status in global_variables["status_list"]:
+            # first letter capitalized and replace '_' with ' '
+            st.write(status.capitalize().replace("_", " "))
+
+    with col2:
+        st.header("Appeal")
+        for appeal in global_variables["appeal_list"]:
+            st.write(appeal.capitalize().replace("_", " "))
+    with col3:
+        st.header("Brand Identity")
+        for brand_identity in global_variables["brand_identity_list"]:
+            st.write(brand_identity.capitalize().replace("_", " "))
+
 if files:
     # somehow the load_waveforms function is not working with the list of UploadedFile objects
     for f_idx, file in enumerate(files):
 
+        # get industry from filename
+        # filename is "26_Mobility.mp3"
+        industry_input = file.name.split("_")[-1].split(".")[0]
+
         waveform, _ = librosa.load(file, sr=global_variables["sample_rate"])
 
-        with st.expander(f"Sound {f_idx + 1}: {file.name}"):
+        with st.expander(f"Sound {f_idx + 1}"):
 
             col1, col2 = st.columns(2)
             col1.audio(file, format="audio/wav")
@@ -63,12 +87,12 @@ if files:
             input_features = get_model_input(waveform, global_variables)
             with col2:
                 if include_industry:
-                    industry_input = st.radio(
-                        "Select industry",
-                        global_variables["industry_list"],
-                        horizontal=True,
-                        key=f"industry_{f_idx}",
-                    )
+                    #     industry_input = st.radio(
+                    #         "Select industry",
+                    #         global_variables["industry_list"],
+                    #         horizontal=True,
+                    #         key=f"industry_{f_idx}",
+                    #     )
                     # get input feature array with industry (one-hot encoeded)
                     input_features = append_industry_to_model_input(
                         input_features, industry_input, global_variables
@@ -100,25 +124,52 @@ if files:
 
             col_status, col_appeal, col_brand = st.columns(3)
             with col_status:
-                st.header("Status Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(global_variables["status_list"])
-                    ].sort_values(by="Prediction", ascending=False)
-                )
+                st.header("Status")
+                s_df = pred_df[
+                    pred_df["Dimension"].isin(global_variables["status_list"])
+                ].sort_values(by="Prediction", ascending=False)
+                # st.dataframe(
+                #     pred_df[
+                #         pred_df["Dimension"].isin(global_variables["status_list"])
+                #     ].sort_values(by="Prediction", ascending=False)
+                # )
+                predicted_dimension = s_df["Dimension"].iloc[0]
+                # replace '_' with ' ' and capitalize first letter of each word
+                predicted_dimension = " ".join(predicted_dimension.split("_")).title()
+                st.subheader(f":orange[{predicted_dimension}]")
+                if show_2nd_pred:
+                    st.write(f"Second Prediction: \n {s_df['Dimension'].iloc[1]}")
+
             with col_appeal:
-                st.header("Appeal Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(global_variables["appeal_list"])
-                    ].sort_values(by="Prediction", ascending=False)
-                )
+                st.header("Appeal")
+                a_df = pred_df[
+                    pred_df["Dimension"].isin(global_variables["appeal_list"])
+                ].sort_values(by="Prediction", ascending=False)
+                # st.dataframe(
+                #     pred_df[
+                #         pred_df["Dimension"].isin(global_variables["appeal_list"])
+                #     ].sort_values(by="Prediction", ascending=False)
+                # )
+                predicted_dimension = a_df["Dimension"].iloc[0]
+                predicted_dimension = " ".join(predicted_dimension.split("_")).title()
+                st.subheader(f":orange[{predicted_dimension}]")
+                if show_2nd_pred:
+                    st.write(f"Second Prediction: \n {a_df['Dimension'].iloc[1]}")
+
             with col_brand:
-                st.header("Brand Identity Dimension")
-                st.dataframe(
-                    pred_df[
-                        pred_df["Dimension"].isin(
-                            global_variables["brand_identity_list"]
-                        )
-                    ].sort_values(by="Prediction", ascending=False)
-                )
+                st.header("Brand Identity")
+                bi_df = pred_df[
+                    pred_df["Dimension"].isin(global_variables["brand_identity_list"])
+                ].sort_values(by="Prediction", ascending=False)
+                # st.dataframe(
+                #     pred_df[
+                #         pred_df["Dimension"].isin(
+                #             global_variables["brand_identity_list"]
+                #         )
+                #     ].sort_values(by="Prediction", ascending=False)
+                # )
+                predicted_dimension = bi_df["Dimension"].iloc[0]
+                predicted_dimension = " ".join(predicted_dimension.split("_")).title()
+                st.subheader(f":orange[{predicted_dimension}]")
+                if show_2nd_pred:
+                    st.write(f"Second Prediction: \n {bi_df['Dimension'].iloc[1]}")

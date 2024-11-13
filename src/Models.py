@@ -1,18 +1,17 @@
 import pytorch_lightning as pl
-import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchmetrics
 
-from .model_utils import RMSEMetric, R2Score
+from .model_utils import R2Score, RMSEMetric
 
 
-class BaseRegressor(pl.LightningModule):
-
+class DNNRegressor(pl.LightningModule):
     def __init__(
         self,
         input_dim,
         output_dim,
+        hidden_dims,
         use_batch_norm=False,
         dropout_prob=0.5,
         learning_rate=1e-3,
@@ -23,8 +22,7 @@ class BaseRegressor(pl.LightningModule):
         demographic_data=False,
         predict_fam_lik=False,
     ):
-
-        super(BaseRegressor, self).__init__()
+        super(DNNRegressor, self).__init__()
 
         self.learning_rate = learning_rate
         self.lr_scheduler = lr_scheduler
@@ -35,6 +33,20 @@ class BaseRegressor(pl.LightningModule):
         self.predict_fam_lik = predict_fam_lik
         self._initialize_metrics()
         self.save_hyperparameters()
+
+        layers = []
+        current_dim = input_dim
+        for hidden_dim in hidden_dims:
+            layers.append(nn.Linear(current_dim, hidden_dim))
+            if use_batch_norm:
+                layers.append(nn.BatchNorm1d(hidden_dim))
+            layers.append(nn.ReLU())
+            if dropout_prob > 0:
+                layers.append(nn.Dropout(dropout_prob))
+            current_dim = hidden_dim
+
+        layers.append(nn.Linear(current_dim, output_dim))
+        self.network = nn.Sequential(*layers)
 
     def _initialize_metrics(self):
         if self.loss_type == "mse":
@@ -56,8 +68,12 @@ class BaseRegressor(pl.LightningModule):
         self.valid_r2 = R2Score()
         self.test_r2 = R2Score()
 
-    def training_step(self, batch, batch_idx):
+    def forward(self, x):
+        for i, layer in enumerate(self.network):
+            x = layer(x)
+        return x
 
+    def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = self.train_loss(y_hat, y)
@@ -68,7 +84,6 @@ class BaseRegressor(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-
         x, y = batch
         y_hat = self(x)
         loss = self.valid_loss(y_hat, y)
@@ -77,7 +92,6 @@ class BaseRegressor(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-
         x, y = batch
         y_hat = self(x)
         loss = self.test_loss(y_hat, y)
@@ -94,7 +108,6 @@ class BaseRegressor(pl.LightningModule):
             optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
 
         if self.lr_scheduler:
-            # values are fixed for experients
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, "min", patience=5, factor=0.5
             )
@@ -103,60 +116,10 @@ class BaseRegressor(pl.LightningModule):
                 "optimizer": optimizer,
                 "lr_scheduler": {
                     "scheduler": scheduler,
-                    "monitor": "valid_loss",  # the metric to be monitored
+                    "monitor": "valid_loss",
                     "interval": "epoch",
                     "frequency": 1,
                 },
             }
         else:
             return optimizer
-
-
-class DNNRegressor(BaseRegressor):
-    def __init__(
-        self,
-        input_dim,
-        output_dim,
-        hidden_dims,
-        use_batch_norm=False,
-        dropout_prob=0.5,
-        learning_rate=1e-3,
-        lr_scheduler=False,
-        weight_decay=False,
-        loss_type="mse",
-        target_name="",
-        demographic_data=False,
-        predict_fam_lik=False,
-    ):
-
-        super(DNNRegressor, self).__init__(
-            input_dim,
-            output_dim,
-            use_batch_norm,
-            dropout_prob,
-            learning_rate,
-            lr_scheduler,
-            weight_decay,
-            loss_type,
-            target_name,
-            demographic_data,
-        )
-
-        layers = []
-        current_dim = input_dim
-        for hidden_dim in hidden_dims:
-            layers.append(nn.Linear(current_dim, hidden_dim))
-            if use_batch_norm:
-                layers.append(nn.BatchNorm1d(hidden_dim))
-            layers.append(nn.ReLU())
-            if dropout_prob > 0:
-                layers.append(nn.Dropout(dropout_prob))
-            current_dim = hidden_dim
-
-        layers.append(nn.Linear(current_dim, output_dim))
-        self.network = nn.Sequential(*layers)
-
-    def forward(self, x):
-        for i, layer in enumerate(self.network):
-            x = layer(x)
-        return x

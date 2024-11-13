@@ -117,7 +117,6 @@ def get_model_input_timbre(waveform, global_variables) -> np.array:
     2) Find timbre clusters using GMM (per frame) -> get cluster count (per sound)
     3) Transform cluster count to timbre topics using LDA
     """
-    timbre_pca, timbre_scaler, timbre_gmm, timbre_lda = load_timbre_models()
     # extract audio features
     mfcc = extract_mfcc_features(
         waveform,
@@ -137,6 +136,7 @@ def get_model_input_timbre(waveform, global_variables) -> np.array:
     )
     timbre_feature = create_timbre_feature(mfcc, zcr).T
 
+    timbre_pca, timbre_scaler, timbre_gmm, timbre_lda = load_timbre_models()
     # cluster count per sound is used as input for LDA
     timbre_clusters = get_cluster_count(
         timbre_feature, timbre_gmm, pca=timbre_pca, scaler=timbre_scaler
