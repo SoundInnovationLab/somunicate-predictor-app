@@ -1,11 +1,9 @@
 import json
-import os
 
 import joblib
 import librosa
 import numpy as np
 import torch
-import yaml
 from sklearn.ensemble import RandomForestRegressor
 
 from .Models import InferenceDNNRegressor
