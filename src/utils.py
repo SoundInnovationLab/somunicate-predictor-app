@@ -75,13 +75,13 @@ def load_multioutput_model(
         if include_industry:
             best_model_folder = "./models/regression_models/multidimension_f_bi_level/industry/brand_identity/lightning_logs/241022_version_best/"
             best_model_checkpoint = (
-                best_model_folder + "checkpoints/epoch=59-step=1500.ckpt"
+                best_model_folder + "checkpoints/241022_multidim_brand_industry.ckpt"
             )
             model = InferenceDNNRegressor(industry=True)
         else:
             best_model_folder = "./models/regression_models/multidimension_f_bi_level/no_industry/brand_identity/lightning_logs/241022_version_best/"
             best_model_checkpoint = (
-                best_model_folder + "checkpoints/epoch=59-step=2040.ckpt"
+                best_model_folder + "checkpoints/241022_multidim_brand.ckpt"
             )
             model = InferenceDNNRegressor(industry=False)
 
