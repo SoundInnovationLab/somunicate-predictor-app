@@ -56,16 +56,16 @@ def load_multioutput_model(
 ):
     if subset == "all":
         if include_industry:
-            best_model_file = "./models/regression_models/multi_dimension_all/industry/241016_model_with_insdustry.pkl"
+            best_model_file = "models/regression_models/multi_dimension_all/industry/241016_multidim_all_insdustry.pkl"
         else:
-            best_model_file = "./models/regression_models/multi_dimension_all/no_industry/241016_model_no_industry.pkl"
+            best_model_file = "models/regression_models/multi_dimension_all/no_industry/241016_multidim_all.pkl"
         model = joblib.load(best_model_file)
 
     if subset == "functional":
         if include_industry:
-            best_model_file = "./models/regression_models/multidimension_f_bi_level/industry/functional/241022_model.pkl"
+            best_model_file = "models/regression_models/multidimension_f_bi_level/industry/functional/241022_multidim_functional_industry.pkl"
         else:
-            best_model_file = "./models/regression_models/multidimension_f_bi_level/no_industry/functional/241022_model.pkl"
+            best_model_file = "models/regression_models/multidimension_f_bi_level/no_industry/functional/241022_multidim_functional.pkl"
 
         model = joblib.load(best_model_file)
 
