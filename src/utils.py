@@ -83,6 +83,15 @@ def load_multioutput_model(
             )
             model = InferenceDNNRegressor(industry=False)
 
+        # Check for available devices
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
+
+        model.to(device)
         model.load_state_dict(torch.load(best_model_checkpoint)["state_dict"])
 
     # when saving the prediction in a dictionary the model path is stored
