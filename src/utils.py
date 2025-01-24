@@ -91,8 +91,9 @@ def load_multioutput_model(
         else:
             device = torch.device("cpu")
 
-        model.to(device)
-        model.load_state_dict(torch.load(best_model_checkpoint)["state_dict"])
+        model.load_state_dict(
+            torch.load(best_model_checkpoint, map_location=device)["state_dict"]
+        )
 
     # when saving the prediction in a dictionary the model path is stored
     if return_model_path:
